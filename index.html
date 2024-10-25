@@ -4,10 +4,10 @@
         <script>
             //function definitions
             function submitForm() {
-                console.log('Form Submitted');
                 const colorCode = document.getElementById('inputCode').value.toUpperCase();
                 console.log('Color Code: ' + colorCode);
                 setColorAndText(colorCode, 'selectedColor');
+                calculateCompatibleColors(colorCode);
             }
 
             function setColorAndText(colorCode, elementId) {
@@ -31,6 +31,56 @@
                 return p;
             }
 
+            function calculateCompatibleColors(colorCode) {
+                const inputLuminance = calculateLuminance(colorCode) + 0.05;
+                //big loop
+                const compatibleColors = [];
+                for(var r = 0; r < 256; r++) {
+                    for(var g = 0; g < 256; g++) {
+                        for(var b = 0; b < 256; b++) {
+                            const newColorCode = numberToHex(r) + numberToHex(g) + numberToHex(b);
+                            const newLuminance = calculateLuminance(newColorCode) + 0.05;
+                            const ratio = inputLuminance < newLuminance ? newLuminance / inputLuminance : inputLuminance / newLuminance;
+                            const newColor = {colorCode: newColorCode, ratio: ratio, AA: false, AALarge: false, AAA: false, AAALarge: false};
+                            newColor.AA = ratio > 4.5;
+                            newColor.AALarge = ratio > 3;
+                            newColor.AAA = ratio > 7;
+                            newColor.AAALarge = ratio > 4.5;
+                            // if(newColor.AA || newColor.AALarge || newColor.AAA || newColor.AAALarge) {
+                            //     compatibleColors.push(newColor);
+                            // }
+                            if(newColor.AAA) {
+                                compatibleColors.push(newColor);
+                            }
+                        }
+                    }
+                }
+                console.log('Compatible Colors: ' + JSON.stringify(compatibleColors));
+                console.warn('Compatible Colors: ' + compatibleColors.length);
+            }
+
+            function numberToHex(number) {
+                if(number < 0 || number > 255) {
+                    throw new Error('Number must be between 0 and 255');
+                }
+                const output = number.toString(16).padStart(2, '0').toUpperCase();
+                return output;
+            }
+
+            function calculateLuminance(colorCode) {
+                const rHex = colorCode.substring(0, 2);
+                const gHex = colorCode.substring(2, 4);
+                const bHex = colorCode.substring(4, 6);
+                var r = parseInt(rHex, 16) / 255;
+                var g = parseInt(gHex, 16) / 255;
+                var b = parseInt(bHex, 16) / 255;
+                r <= 0.03928 ? r = r / 12.92 : r = Math.pow((r + 0.055) / 1.055, 2.4);
+                g <= 0.03928 ? g = g / 12.92 : g = Math.pow((g + 0.055) / 1.055, 2.4);
+                b <= 0.03928 ? b = b / 12.92 : b = Math.pow((b + 0.055) / 1.055, 2.4);
+                const output = r * 0.2126 + g * 0.7152 + b * 0.0722;
+                return output;
+            }
+
             //listeners and event handlers
             document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('mainform-hexCode').addEventListener('submit', function(e) {
@@ -48,8 +98,9 @@
     </head>
     <body>
         <form id="mainform-hexCode">
-            <input type="text" maxlength="6" placeholder="Enter Color Code" id="inputCode" pattern="[A-Fa-f0-9]{6}" title="Enter Hex value (without #)" />
-            <button type="submit">Submit</button>
+            <input type="text" maxlength="6" minlength="6" placeholder="Enter Color Code" id="inputCode" pattern="[A-Fa-f0-9]{6}" title="Enter Hex value (without #)" />
+            <!--<button type="submit">Submit</button>-->
+            <button onclick="submitForm()" type="button">Submit</button>
         </form>
 
         <div id="results">
