@@ -51,7 +51,7 @@
                             const newColorCode = numberToHex(r) + numberToHex(g) + numberToHex(b);
                             const newLuminance = calculateLuminance(newColorCode) + 0.05;
                             const ratio = inputLuminance < newLuminance ? newLuminance / inputLuminance : inputLuminance / newLuminance;
-                            const newColor = {colorCode: newColorCode, ratio: ratio, AA: false, AALarge: false, AAA: false, AAALarge: false};
+                            const newColor = {colorCode: newColorCode, luminance: newLuminance, ratio: ratio, AA: false, AALarge: false, AAA: false, AAALarge: false};
                             newColor.AA = ratio > 4.5;
                             newColor.AALarge = ratio > 3;
                             newColor.AAA = ratio > 7;
@@ -62,7 +62,6 @@
                         }
                     }
                 }
-                //console.log('Compatible Colors: ' + JSON.stringify(compatibleColors));
                 console.warn('Compatible Colors: ' + compatibleColors.length);
                 return compatibleColors;
             }
@@ -73,9 +72,10 @@
                 compatibleColors.forEach(function(color) {
                     var innerElement = document.createElement('div');
                     innerElement.style.backgroundColor = '#' + color.colorCode;
-                    innerElement.style.color = 'white';
+                    innerElement.style.color = color.luminance > 0.5 ? 'black' : 'white';
                     innerElement.innerText = color.colorCode;
                     resultsDiv.appendChild(innerElement);
+                    resultsDiv.appendChild(document.createElement('br'));
                 });
             }
 
@@ -114,11 +114,6 @@
                 min-width: 10px;
                 max-width: 10px;
                 max-height: 10px;
-            }
-
-            div {
-                display: flex;
-                flex-wrap: wrap;
             }
         </style>
     </head>
