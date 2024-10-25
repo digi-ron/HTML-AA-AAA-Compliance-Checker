@@ -20,14 +20,9 @@
             }
 
             function setColorAndText(colorCode, elementId) {
-                var innerElement = document.createElement('div');
-                createColorComparisonText(colorCode, 'white', innerElement);
-                createColorComparisonText(colorCode, 'lightgrey', innerElement);
-                createColorComparisonText(colorCode, 'darkgrey', innerElement);
-                createColorComparisonText(colorCode, 'black', innerElement);
-                innerElement.style.backgroundColor = '#' + colorCode;
                 const colorDiv = document.getElementById(elementId);
                 colorDiv.innerHTML = '';
+                const innerElement = createSingleColorElement(colorCodeToObject(colorCode, calculateLuminance(colorCode) + 0.05), false);
                 colorDiv.appendChild(innerElement);
             }
 
@@ -43,40 +38,131 @@
 
             function calculateCompatibleColors(colorCode, complianceLevel) {
                 const inputLuminance = calculateLuminance(colorCode) + 0.05;
-                const interationGap = 17
+                const iterationGap = 17
                 //big loop
                 const compatibleColors = [];
-                for(var r = 0; r < 256; r+= interationGap) {
-                    for(var g = 0; g < 256; g+= interationGap) {
-                        for(var b = 0; b < 256; b+= interationGap) {
+                for(var r = 0; r < 256; r+= iterationGap) {
+                    for(var g = 0; g < 256; g+= iterationGap) {
+                        for(var b = 0; b < 256; b+= iterationGap) {
                             const newColorCode = numberToHex(r) + numberToHex(g) + numberToHex(b);
-                            const newLuminance = calculateLuminance(newColorCode) + 0.05;
-                            const ratio = inputLuminance < newLuminance ? newLuminance / inputLuminance : inputLuminance / newLuminance;
-                            const newColor = {colorCode: newColorCode, luminance: newLuminance, ratio: ratio, AA: false, AALarge: false, AAA: false, AAALarge: false};
-                            newColor.AA = ratio > 4.5;
-                            newColor.AALarge = ratio > 3;
-                            newColor.AAA = ratio > 7;
-                            newColor.AAALarge = ratio > 4.5;
+                            const newColor = colorCodeToObject(newColorCode, inputLuminance);
                             if(newColor[complianceLevel]) {
                                 compatibleColors.push(newColor);
                             }
                         }
                     }
                 }
-                console.warn('Compatible Colors: ' + compatibleColors.length);
+                compatibleColors.sort(function(a, b) {
+                    const largestR = Math.max(a.r, b.r);
+                    const largestG = Math.max(a.g, b.g);
+                    const largestB = Math.max(a.b, b.b);
+
+                    //scoring system
+                    let scoreA = 1;
+                    let scoreB = 1;
+
+                    scoreA *= largestR === a.r ? 1000 : 1;
+                    scoreA *= largestG === a.g ? 100 : 1;
+                    scoreA *= largestB === a.b ? 10 : 1;
+                    scoreA += a.ratio;
+
+                    scoreB *= largestR === b.r ? 1000 : 1;
+                    scoreB *= largestG === b.g ? 100 : 1;
+                    scoreB *= largestB === b.b ? 10 : 1;
+                    scoreB += b.ratio;
+
+                    return scoreB - scoreA;
+                });
+                console.info('Compatible Colors: ' + compatibleColors.length);
                 return compatibleColors;
+            }
+
+            function colorCodeToObject(colorCode, inputLuminance) {
+                const newLuminance = calculateLuminance(colorCode) + 0.05;
+                const ratio = inputLuminance < newLuminance ? newLuminance / inputLuminance : inputLuminance / newLuminance;
+                const rValue = parseInt(colorCode.substring(0, 2), 16);
+                const gValue = parseInt(colorCode.substring(2, 4), 16);
+                const bValue = parseInt(colorCode.substring(4, 6), 16);
+                const newColor = {r: rValue, g: gValue, b:bValue, colorCode: colorCode, luminance: newLuminance, ratio: ratio, AA: false, AALarge: false, AAA: false, AAALarge: false};
+                newColor.AA = ratio > 4.5;
+                newColor.AALarge = ratio > 3;
+                newColor.AAA = ratio > 7;
+                newColor.AAALarge = ratio > 4.5;
+                return newColor;
             }
 
             function displayResults(compatibleColors) {
                 const resultsDiv = document.getElementById('compatibleColors');
                 resultsDiv.innerHTML = '';
-                compatibleColors.forEach(function(color) {
-                    var innerElement = document.createElement('div');
-                    innerElement.style.backgroundColor = '#' + color.colorCode;
-                    innerElement.style.color = color.luminance > 0.5 ? 'black' : 'white';
-                    innerElement.innerText = color.colorCode;
+
+                const totalCountElm = document.createElement('p');
+                totalCountElm.innerText = 'Total Count: ' + compatibleColors.length;
+                totalCountElm.style.textDecoration = 'italics';
+
+                rBias = compatibleColors.filter(function(color) {
+                    return color.r > color.g && color.r > color.b;
+                });
+                gBias = compatibleColors.filter(function(color) {
+                    return color.g > color.r && color.g > color.b;
+                });
+                bBias = compatibleColors.filter(function(color) {
+                    return color.b > color.r && color.b > color.g;
+                });
+
+                const rBiasTitle = document.createElement('h3');
+                rBiasTitle.innerText = 'Reds';
+                const gBiasTitle = document.createElement('h3');
+                gBiasTitle.innerText = 'Greens';
+                bBiasTitle = document.createElement('h3');
+                bBiasTitle.innerText = 'Blues';
+
+                const rCountElm = document.createElement('p');
+                rCountElm.innerText = 'Count: ' + rBias.length;
+                rCountElm.style.textDecoration = 'italics';
+
+                const gCountElm = document.createElement('p');
+                gCountElm.innerText = 'Count: ' + gBias.length;
+                gCountElm.style.textDecoration = 'italics';
+
+                const bCountElm = document.createElement('p');
+                bCountElm.innerText = 'Count: ' + bBias.length;
+                bCountElm.style.textDecoration = 'italics';
+
+                resultsDiv.appendChild(rBiasTitle);
+                rBias.forEach(function(color) {
+                    const innerElement = createSingleColorElement(color);
                     resultsDiv.appendChild(innerElement);
                 });
+                resultsDiv.appendChild(rCountElm);
+                resultsDiv.appendChild(document.createElement('hr'));
+
+                resultsDiv.appendChild(gBiasTitle);
+                gBias.forEach(function(color) {
+                    const innerElement = createSingleColorElement(color);
+                    resultsDiv.appendChild(innerElement);
+                });
+                resultsDiv.appendChild(gCountElm);
+                resultsDiv.appendChild(document.createElement('hr'));
+
+                resultsDiv.appendChild(bBiasTitle);
+                bBias.forEach(function(color) {
+                    const innerElement = createSingleColorElement(color);
+                    resultsDiv.appendChild(innerElement);
+                });
+                resultsDiv.appendChild(bCountElm);
+                resultsDiv.appendChild(document.createElement('hr'));
+                resultsDiv.appendChild(totalCountElm);
+            }
+
+            function createSingleColorElement(colorInformation, generateRatio = true) {
+                var innerElement = document.createElement('code');
+                innerElement.style.backgroundColor = '#' + colorInformation.colorCode;
+                innerElement.style.color = colorInformation.luminance > 0.5 ? 'black' : 'white';
+                innerElement.innerText = '#' + colorInformation.colorCode;
+                if(generateRatio) {
+                    innerElement.innerText += " (" + colorInformation.ratio.toFixed(2) + ")";
+                }
+                return innerElement;
             }
 
             function numberToHex(number) {
@@ -109,32 +195,26 @@
             })
         </script>
         <style>
-            .colorsquare {
-                min-height: 10px;
-                min-width: 10px;
-                max-width: 10px;
-                max-height: 10px;
-            }
-
-            div {
+            code {
                 max-width: fit-content;
                 display: inline-block;
-                margin: 10px;
+                margin: 5px;
             }
         </style>
     </head>
     <body>
         <form id="mainform-hexCode">
-            <input type="text" maxlength="6" minlength="6" placeholder="Enter Color Code" id="inputCode" pattern="[A-Fa-f0-9]{6}" title="Enter Hex value (without #)" />
-            <button onclick="submitForm('AAA')" type="button">Check AAA</button>
+            #<input type="text" maxlength="6" minlength="6" placeholder="Enter Color Code" id="inputCode" pattern="[A-Fa-f0-9]{6}" title="Enter Hex value (without #)" />
             <button onclick="submitForm('AA')" type="button">Check AA</button>
+            <button onclick="submitForm('AAA')" type="button">Check AAA</button>
+            <button onclick="submitForm('AALarge')" type="button">Check AA Large</button>
+            <button onclick="submitForm('AAALarge')" type="button">Check AAA Large</button>
         </form>
 
         <div id="results">
             <h2>Selected Color</h2>
             <div id="selectedColor"></div>
             <h2>Compatible Colors</h2>
-            <p class="no-results"><i>Please submit the form above to display compatible colors</i></p>
             <div id="compatibleColors"></div>
         </div>
     </body>
