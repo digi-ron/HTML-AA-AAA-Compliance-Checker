@@ -75,7 +75,6 @@
                     innerElement.style.color = color.luminance > 0.5 ? 'black' : 'white';
                     innerElement.innerText = color.colorCode;
                     resultsDiv.appendChild(innerElement);
-                    resultsDiv.appendChild(document.createElement('br'));
                 });
             }
 
@@ -115,12 +114,17 @@
                 max-width: 10px;
                 max-height: 10px;
             }
+
+            div {
+                max-width: fit-content;
+                display: inline-block;
+                margin: 10px;
+            }
         </style>
     </head>
     <body>
         <form id="mainform-hexCode">
             <input type="text" maxlength="6" minlength="6" placeholder="Enter Color Code" id="inputCode" pattern="[A-Fa-f0-9]{6}" title="Enter Hex value (without #)" />
-            <!--<button type="submit">Submit</button>-->
             <button onclick="submitForm('AAA')" type="button">Check AAA</button>
             <button onclick="submitForm('AA')" type="button">Check AA</button>
         </form>
