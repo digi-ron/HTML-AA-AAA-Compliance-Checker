@@ -2,12 +2,21 @@
     <head>
         <title>Style Guide</title>
         <script>
+            //global variables
+
             //function definitions
-            function submitForm() {
+            function submitForm(complianceLevel = "AA") {
+                console.log('Compliance Level: ' + complianceLevel);
+                const form = document.getElementById('mainform-hexCode');
+                if (!form.checkValidity()) {
+                    alert('Please enter a valid hex color code.');
+                    return;
+                }
                 const colorCode = document.getElementById('inputCode').value.toUpperCase();
                 console.log('Color Code: ' + colorCode);
                 setColorAndText(colorCode, 'selectedColor');
-                calculateCompatibleColors(colorCode);
+                const compatibleColors = calculateCompatibleColors(colorCode, complianceLevel);
+                displayResults(compatibleColors);
             }
 
             function setColorAndText(colorCode, elementId) {
@@ -18,6 +27,7 @@
                 createColorComparisonText(colorCode, 'black', innerElement);
                 innerElement.style.backgroundColor = '#' + colorCode;
                 const colorDiv = document.getElementById(elementId);
+                colorDiv.innerHTML = '';
                 colorDiv.appendChild(innerElement);
             }
 
@@ -31,7 +41,7 @@
                 return p;
             }
 
-            function calculateCompatibleColors(colorCode) {
+            function calculateCompatibleColors(colorCode, complianceLevel) {
                 const inputLuminance = calculateLuminance(colorCode) + 0.05;
                 //big loop
                 const compatibleColors = [];
@@ -46,17 +56,27 @@
                             newColor.AALarge = ratio > 3;
                             newColor.AAA = ratio > 7;
                             newColor.AAALarge = ratio > 4.5;
-                            // if(newColor.AA || newColor.AALarge || newColor.AAA || newColor.AAALarge) {
-                            //     compatibleColors.push(newColor);
-                            // }
-                            if(newColor.AAA) {
+                            if(newColor[complianceLevel]) {
                                 compatibleColors.push(newColor);
                             }
                         }
                     }
                 }
-                console.log('Compatible Colors: ' + JSON.stringify(compatibleColors));
+                //console.log('Compatible Colors: ' + JSON.stringify(compatibleColors));
                 console.warn('Compatible Colors: ' + compatibleColors.length);
+                return compatibleColors;
+            }
+
+            function displayResults(compatibleColors) {
+                const resultsDiv = document.getElementById('compatibleColors');
+                resultsDiv.innerHTML = '';
+                compatibleColors.forEach(function(color) {
+                    var innerElement = document.createElement('div');
+                    innerElement.style.backgroundColor = '#' + color.colorCode;
+                    innerElement.style.color = 'white';
+                    innerElement.innerText = color.colorCode;
+                    resultsDiv.appendChild(innerElement);
+                });
             }
 
             function numberToHex(number) {
@@ -85,14 +105,20 @@
             document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('mainform-hexCode').addEventListener('submit', function(e) {
                     e.preventDefault();
-                    submitForm();
                 });
             })
         </script>
         <style>
-            div {
+            .colorsquare {
                 min-height: 10px;
                 min-width: 10px;
+                max-width: 10px;
+                max-height: 10px;
+            }
+
+            div {
+                display: flex;
+                flex-wrap: wrap;
             }
         </style>
     </head>
@@ -100,7 +126,8 @@
         <form id="mainform-hexCode">
             <input type="text" maxlength="6" minlength="6" placeholder="Enter Color Code" id="inputCode" pattern="[A-Fa-f0-9]{6}" title="Enter Hex value (without #)" />
             <!--<button type="submit">Submit</button>-->
-            <button onclick="submitForm()" type="button">Submit</button>
+            <button onclick="submitForm('AAA')" type="button">Check AAA</button>
+            <button onclick="submitForm('AA')" type="button">Check AA</button>
         </form>
 
         <div id="results">
