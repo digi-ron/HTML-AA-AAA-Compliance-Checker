@@ -1,0 +1,63 @@
+<html>
+    <head>
+        <title>Style Guide</title>
+        <script>
+            //function definitions
+            function submitForm() {
+                console.log('Form Submitted');
+                const colorCode = document.getElementById('inputCode').value.toUpperCase();
+                console.log('Color Code: ' + colorCode);
+                setColorAndText(colorCode, 'selectedColor');
+            }
+
+            function setColorAndText(colorCode, elementId) {
+                var innerElement = document.createElement('div');
+                createColorComparisonText(colorCode, 'white', innerElement);
+                createColorComparisonText(colorCode, 'lightgrey', innerElement);
+                createColorComparisonText(colorCode, 'darkgrey', innerElement);
+                createColorComparisonText(colorCode, 'black', innerElement);
+                innerElement.style.backgroundColor = '#' + colorCode;
+                const colorDiv = document.getElementById(elementId);
+                colorDiv.appendChild(innerElement);
+            }
+
+            function createColorComparisonText(innerText, color, parent = null) {
+                var p = document.createElement('p');
+                p.innerText = innerText;
+                p.style.color = color;
+                if (parent) {
+                    parent.appendChild(p);
+                }
+                return p;
+            }
+
+            //listeners and event handlers
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('mainform-hexCode').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    submitForm();
+                });
+            })
+        </script>
+        <style>
+            div {
+                min-height: 10px;
+                min-width: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <form id="mainform-hexCode">
+            <input type="text" maxlength="6" placeholder="Enter Color Code" id="inputCode" pattern="[A-Fa-f0-9]{6}" title="Enter Hex value (without #)" />
+            <button type="submit">Submit</button>
+        </form>
+
+        <div id="results">
+            <h2>Selected Color</h2>
+            <div id="selectedColor"></div>
+            <h2>Compatible Colors</h2>
+            <p class="no-results"><i>Please submit the form above to display compatible colors</i></p>
+            <div id="compatibleColors"></div>
+        </div>
+    </body>
+</html>
