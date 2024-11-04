@@ -2,20 +2,20 @@
     <head>
         <title>Style Guide</title>
         <script>
-            //global variables
-
             //function definitions
             function submitForm(complianceLevel = "AA") {
                 console.log('Compliance Level: ' + complianceLevel);
                 const form = document.getElementById('mainform-hexCode');
                 if (!form.checkValidity()) {
-                    alert('Please enter a valid hex color code.');
+                    alert('Invalid Input! Please try again');
                     return;
                 }
                 const colorCode = document.getElementById('inputCode').value.toUpperCase();
+                const iterationGap = parseInt(document.getElementById('inputGap').value);
                 console.log('Color Code: ' + colorCode);
+                console.log('Iteration Gap: ' + iterationGap);
                 setColorAndText(colorCode, 'selectedColor');
-                const compatibleColors = calculateCompatibleColors(colorCode, complianceLevel);
+                const compatibleColors = calculateCompatibleColors(colorCode, complianceLevel, iterationGap);
                 displayResults(compatibleColors);
             }
 
@@ -36,9 +36,8 @@
                 return p;
             }
 
-            function calculateCompatibleColors(colorCode, complianceLevel) {
+            function calculateCompatibleColors(colorCode, complianceLevel, iterationGap = 17) {
                 const inputLuminance = calculateLuminance(colorCode) + 0.05;
-                const iterationGap = 17
                 //big loop
                 const compatibleColors = [];
                 for(var r = 0; r < 256; r+= iterationGap) {
@@ -192,6 +191,15 @@
                 document.getElementById('mainform-hexCode').addEventListener('submit', function(e) {
                     e.preventDefault();
                 });
+                document.getElementById('inputGap').addEventListener('input', function() {
+                    const iterationGap = parseInt(document.getElementById('inputGap').value);
+                    const warningInformation = document.querySelector('.warningInformation');
+                    if(iterationGap < 10) {
+                        warningInformation.style.display = 'inline';
+                    } else {
+                        warningInformation.style.display = 'none';
+                    }
+                });
             })
         </script>
         <style>
@@ -204,13 +212,34 @@
     </head>
     <body>
         <form id="mainform-hexCode">
-            #<input type="text" maxlength="6" minlength="6" placeholder="Enter Color Code" id="inputCode" pattern="[A-Fa-f0-9]{6}" title="Enter Hex value (without #)" />
+            <table>
+                <tr>
+                    <td>
+                        <label for="inputCode">Enter Color Code</label>
+                    </td>
+                    <td>
+                        #<input type="text" maxlength="6" minlength="6" placeholder="Enter Color Code" id="inputCode" pattern="[A-Fa-f0-9]{6}" title="Enter Hex value (without #)" required />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="inputGap">Enter Gap between colors (1-100, default 17)</label>
+                    </td>
+                    <td>
+                        <input type="number" min="1" max="100" placeholder="Enter Gap between colors (1-100)" id="inputGap" title="Enter gap between iterations (1-100)" required value="17" />
+                        <span class="warningInformation" style="color:red; display: none;">
+                            WARNING: Lower values may cause high RAM/CPU usage. There is no protection for if you're silly enough to put #000000 as the color code and 1 as the iterations!
+                        </span>
+                    </td>
+                </tr>
+            </table>
+            <hr/>
             <button onclick="submitForm('AA')" type="button">Check AA</button>
             <button onclick="submitForm('AAA')" type="button">Check AAA</button>
             <button onclick="submitForm('AALarge')" type="button">Check AA Large</button>
             <button onclick="submitForm('AAALarge')" type="button">Check AAA Large</button>
         </form>
-
+        <hr/>
         <div id="results">
             <h2>Selected Color</h2>
             <div id="selectedColor"></div>
